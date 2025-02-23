@@ -1,0 +1,27 @@
+# Jogo - Drop Merge
+
+Para garantir que o jogo funcione corretamente, siga a ordem de compilação dos arquivos abaixo:
+
+## Passos para Compilação
+1. Limpar o terminal (opcional, para melhor organização):
+   ```
+   clear
+   ```
+2. Compilar os arquivos do jogo na seguinte ordem:
+   ```
+   gcc inicio.c -o inicio
+   gcc menu.c -o menu
+   gcc configuracoes.c -o configuracoes
+   gcc main.c -o main
+   ```
+
+## Executando o Jogo
+Depois de compilar os arquivos, inicie o jogo com o seguinte comando:
+
+```
+./inicio
+```
+
+
+Bom jogo!
+

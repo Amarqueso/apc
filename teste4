@@ -1,0 +1,254 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef _WIN32
+    #include <windows.h> // Para Sleep() no Windows
+#else
+    #include <unistd.h>  // Para usleep() no Linux/MacOS
+#endif
+
+// Protótipos das funções
+void limpa_tela();
+void espera(int milissegundos);
+void cair_numeros();
+void Mostra(int nro, int nro_seguinte);
+void empilhar(int coluna, int numero);
+int verificar_e_realizar_operacoes(int coluna);
+int realizar_operacoes_proximas(int coluna);
+void salvar_pontuacao(char *nickname, int pontuacao);
+
+// Matriz do jogo
+int matriz_jogo[10][5] = {0};
+
+// Pontuação do jogador
+int pontuacao = 0;
+
+// Função para limpar a tela
+void limpa_tela() {
+    #ifdef _WIN32
+        system("cls"); // Limpa a tela no Windows
+    #else
+        system("clear"); // Limpa a tela no Linux/macOS
+    #endif
+}
+
+// Função para criar uma pausa
+void espera(int milissegundos) {
+    #ifdef _WIN32
+        Sleep(milissegundos); // Pausa no Windows em milissegundos
+    #else
+        usleep(milissegundos * 1000); // Pausa no Linux/macOS (converte para microssegundos)
+    #endif
+}
+
+// Função para mostrar o estado atual do jogo
+void Mostra(int nro, int nro_seguinte) {
+    limpa_tela();
+    printf("           +----+  +----+\n");
+    printf("           |%4d|  |%4d|\n", nro, nro_seguinte);
+    printf("           +----+  +----+\n");
+    for (int i = 9; i >= 0; i--) {
+        printf("  +----+----+----+----+----+\n");
+        printf("  |");
+        for (int j = 0; j < 5; j++) {
+            if (matriz_jogo[i][j] != 0)
+                printf("%4d|", matriz_jogo[i][j]);
+            else
+                printf("    |");
+        }
+        printf("\n");
+    }
+    printf("  +----+----+----+----+----+\n");
+    printf("  +----+----+----+----+----+\n");
+    printf("  |  1 |  2 |  3 |  4 |  5 |\n");
+    printf("  +----+----+----+----+----+\n\n");
+
+    // Exibe a pontuação atual
+    printf("Pontuacao: %d\n\n", pontuacao);
+}
+
+// Função para empilhar um número em uma coluna
+void empilhar(int coluna, int numero) {
+    for (int i = 0; i < 10; i++) {
+        if (matriz_jogo[i][coluna] == 0) {
+            matriz_jogo[i][coluna] = numero;
+            return;
+        }
+    }
+    printf("Coluna cheia! Tente outra coluna.\n");
+    espera(1000);
+}
+
+// Função para verificar e realizar operações de soma entre números iguais
+int verificar_e_realizar_operacoes(int coluna_escolhida) {
+    int operacoes_realizadas = 0;
+
+    int nova_matriz[10][5] = {0};
+
+    // Copia a matriz original para a nova matriz
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 5; j++) {
+            nova_matriz[i][j] = matriz_jogo[i][j];
+        }
+    }
+
+    // Verificação horizontal (esquerda e direita) a partir da coluna escolhida
+    for (int i = 0; i < 10; i++) {
+        for (int j = coluna_escolhida; j >= 0; j--) { // Para a esquerda
+            if (j > 0 && nova_matriz[i][j] != 0 && nova_matriz[i][j] == nova_matriz[i][j - 1]) {
+                nova_matriz[i][j] *= 2;
+                pontuacao += nova_matriz[i][j];
+                nova_matriz[i][j - 1] = 0;
+                operacoes_realizadas = 1;
+            }
+        }
+        for (int j = coluna_escolhida; j < 4; j++) { // Para a direita
+            if (nova_matriz[i][j] != 0 && nova_matriz[i][j] == nova_matriz[i][j + 1]) {
+                nova_matriz[i][j] *= 2;
+                pontuacao += nova_matriz[i][j];
+                nova_matriz[i][j + 1] = 0;
+                operacoes_realizadas = 1;
+            }
+        }
+    }
+
+    // Verificação vertical (de cima para baixo e de baixo para cima) a partir da coluna escolhida
+    for (int j = coluna_escolhida; j <= coluna_escolhida; j++) { // Apenas verifica a coluna escolhida
+        for (int i = 0; i < 9; i++) { // Para baixo
+            if (nova_matriz[i][j] != 0 && nova_matriz[i][j] == nova_matriz[i + 1][j]) {
+                nova_matriz[i][j] *= 2;
+                pontuacao += nova_matriz[i][j];
+                nova_matriz[i + 1][j] = 0;
+                operacoes_realizadas = 1;
+            }
+        }
+        for (int i = 9; i > 0; i--) { // Para cima
+            if (nova_matriz[i][j] != 0 && nova_matriz[i][j] == nova_matriz[i - 1][j]) {
+                nova_matriz[i][j] *= 2;
+                pontuacao += nova_matriz[i][j];
+                nova_matriz[i - 1][j] = 0;
+                operacoes_realizadas = 1;
+            }
+        }
+    }
+
+    // Atualiza a matriz do jogo após as operações
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 5; j++) {
+            matriz_jogo[i][j] = nova_matriz[i][j];
+        }
+    }
+
+    cair_numeros();
+    return operacoes_realizadas;
+}
+
+// Função para realizar operações com números próximos
+int realizar_operacoes_proximas(int coluna) {
+    int operacoes_realizadas = 0;
+
+    while (verificar_e_realizar_operacoes(coluna)) {
+        operacoes_realizadas = 1;
+        Mostra(0, 0);
+        espera(200);
+    }
+
+    return operacoes_realizadas;
+}
+
+// Função para fazer os números caírem
+void cair_numeros() {
+    for (int j = 0; j < 5; j++) {
+        for (int i = 0; i < 9; i++) {
+            if (matriz_jogo[i][j] == 0) {
+                for (int k = i + 1; k < 10; k++) {
+                    if (matriz_jogo[k][j] != 0) {
+                        matriz_jogo[i][j] = matriz_jogo[k][j];
+                        matriz_jogo[k][j] = 0;
+                        Mostra(0, 0);
+                        espera(200);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Função para salvar a pontuação e o nome do jogador no ranking
+void salvar_pontuacao(char *nickname, int pontuacao) {
+    FILE *file = fopen("ranking.bin", "ab");
+    if (!file) {
+        printf("Erro ao abrir o arquivo de ranking.\n");
+        return;
+    }
+
+    struct {
+        char nickname[20];
+        int pontuacao;
+    } jogador;
+
+    strncpy(jogador.nickname, nickname, 19);
+    jogador.nickname[19] = '\0';
+    jogador.pontuacao = pontuacao;
+
+    fwrite(&jogador, sizeof(jogador), 1, file);
+    fclose(file);
+}
+
+// Função principal
+int main() {
+    FILE *file;
+    int numeros[100];
+    int i = 0;
+
+    file = fopen("numeros.txt", "r");
+    if (!file) {
+        printf("Erro: Nao foi possivel abrir o arquivo. Verifique o caminho.\n");
+        return 1;
+    }
+
+    while (i < 100 && fscanf(file, "%d", &numeros[i]) != EOF) {
+        i++;
+    }
+    fclose(file);
+
+    if (i == 0) {
+        printf("O arquivo esta vazio!\n");
+        return 1;
+    }
+
+    int posicao;
+    char nickname[20];
+
+    FILE *temp = fopen("nickname.txt", "r");
+    if (!temp) {
+        printf("Erro ao carregar o nickname do jogador.\n");
+        return 1;
+    }
+    fscanf(temp, "%19s", nickname);
+    fclose(temp);
+
+    for (i = 0; i < 99; i++) {
+        Mostra(numeros[i], numeros[i + 1]);
+        printf("Escolha uma coluna (1-5) ou digite 0 para sair: ");
+
+        if (scanf("%d", &posicao) != 1 || posicao < 0 || posicao > 5) {
+            printf("Opcao invalida. Encerrando o jogo.\n");
+            break;
+        }
+
+        if (posicao == 0) {
+            printf("Saindo do jogo...\n");
+            salvar_pontuacao(nickname, pontuacao);
+            break;
+        }
+
+        empilhar(posicao - 1, numeros[i]);
+        realizar_operacoes_proximas(posicao - 1);
+    }
+
+    printf("Fim do jogo! Sua pontuacao final: %d\n", pontuacao);
+    return 0;
+}
